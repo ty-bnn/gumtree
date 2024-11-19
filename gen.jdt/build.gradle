@@ -1,5 +1,10 @@
 description = 'GumTree tree generator for Java code (Eclipse JDT based).'
 
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
 dependencies {
-	implementation 'org.eclipse.jdt:org.eclipse.jdt.core:3.38.0'
+	implementation group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.40.0'
 }
