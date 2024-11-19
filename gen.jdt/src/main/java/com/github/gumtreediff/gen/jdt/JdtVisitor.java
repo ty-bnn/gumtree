@@ -38,7 +38,6 @@ public class JdtVisitor  extends AbstractJdtVisitor {
     private static final Type METHOD_INVOCATION_RECEIVER = type("METHOD_INVOCATION_RECEIVER");
     private static final Type METHOD_INVOCATION_ARGUMENTS = type("METHOD_INVOCATION_ARGUMENTS");
     private static final Type TYPE_DECLARATION_KIND = type("TYPE_DECLARATION_KIND");
-    private static final Type ASSIGNMENT_OPERATOR = type("ASSIGNMENT_OPERATOR");
     private static final Type PREFIX_EXPRESSION_OPERATOR = type("PREFIX_EXPRESSION_OPERATOR");
     private static final Type POSTFIX_EXPRESSION_OPERATOR = type("POSTFIX_EXPRESSION_OPERATOR");
     private static final Type TAG_NAME = type("TAG_NAME");
@@ -101,6 +100,8 @@ public class JdtVisitor  extends AbstractJdtVisitor {
             return n.toString();
         else if (n instanceof TextElement)
             return n.toString();
+        else if (n instanceof Operator)
+            return ((Operator) n).getOperator();
         else
             return "";
     }
@@ -146,8 +147,6 @@ public class JdtVisitor  extends AbstractJdtVisitor {
             handlePostVisit((TypeDeclaration) n);
         else if (n instanceof InfixExpression)
             handlePostVisit((InfixExpression) n);
-        else if (n instanceof Assignment)
-            handlePostVisit((Assignment)  n);
         else if (n instanceof PrefixExpression)
             handlePostVisit((PrefixExpression) n);
         else if (n instanceof PostfixExpression)
@@ -228,37 +227,6 @@ public class JdtVisitor  extends AbstractJdtVisitor {
         }
         catch (InvalidInputException ex) {
             throw new SyntaxException(null, null, ex);
-        }
-
-        return new PosAndLength(pos, length);
-    }
-
-    private void handlePostVisit(Assignment a) {
-        Tree t = this.trees.peek();
-        String label  = a.getOperator().toString();
-        Tree s = context.createTree(ASSIGNMENT_OPERATOR, label);
-        PosAndLength pl = searchAssignmentOperatorPosition(a);
-        s.setPos(pl.pos);
-        s.setLength(pl.length);
-        t.getChildren().add(1, s);
-        s.setParent(t);
-    }
-
-    private PosAndLength searchAssignmentOperatorPosition(Assignment a) {
-        Tree t = this.trees.peek();
-        scanner.resetTo(t.getChild(0).getEndPos(), t.getChild(1).getPos());
-        int pos = 0;
-        int length = 0;
-        try {
-            int token = scanner.getNextToken();
-            while (token != ITerminalSymbols.TokenNameEOF) {
-                pos = scanner.getCurrentTokenStartPosition();
-                length = scanner.getCurrentTokenEndPosition() - pos + 1;
-                break;
-            }
-        }
-        catch (InvalidInputException e) {
-            throw new SyntaxException(null, null, e);
         }
 
         return new PosAndLength(pos, length);
