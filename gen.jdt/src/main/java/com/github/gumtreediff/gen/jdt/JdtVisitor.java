@@ -84,9 +84,7 @@ public class JdtVisitor  extends AbstractJdtVisitor {
     }
 
     protected String getLabel(ASTNode n) {
-        if (n instanceof Name)
-            return ((Name) n).getFullyQualifiedName();
-        else if (n instanceof PrimitiveType)
+        if (n instanceof PrimitiveType)
             return n.toString();
         else if (n instanceof Modifier)
             return n.toString();
@@ -102,6 +100,8 @@ public class JdtVisitor  extends AbstractJdtVisitor {
             return n.toString();
         else if (n instanceof Operator)
             return ((Operator) n).getOperator();
+        else if (n instanceof SimpleName)
+            return n.toString();
         else
             return "";
     }
