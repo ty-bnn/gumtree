@@ -67,18 +67,19 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
         DirectoryComparator comparator = new DirectoryComparator(opts.srcPath + "/before", opts.srcPath + "/after");
         comparator.compare();
 
+        int i = 0;
         for (Pair<File, File> pair : comparator.getModifiedFiles()) {
             var diff = getDiff(pair.first.getAbsolutePath(), pair.second.getAbsolutePath());
             var html = VanillaDiffView.build(pair.first, pair.second, diff, true);
 
-            String fileName = pair.first.getName();
-            int lastDotIndex = fileName.lastIndexOf('.');
-            Path filePath = Paths.get(opts.dstPath + version + fileName.substring(0, lastDotIndex) + ".html");
+            Path filePath = Paths.get(opts.dstPath + version + i + ".html");
 
             File htmlOutput = new File(filePath.toString());
             FileWriter writer = new FileWriter(htmlOutput);
             writer.write(html.render());
             writer.close();
+
+            i++;
         }
     }
 }
