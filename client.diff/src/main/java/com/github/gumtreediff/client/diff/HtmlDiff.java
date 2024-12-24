@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.FileWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 
 @Register(name = "htmldiff", description = "Dump diff as HTML in stdout",
         options = HtmlDiff.HtmlDiffOptions.class)
@@ -68,7 +69,9 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
         comparator.compare();
 
         int i = 0;
-        for (Pair<File, File> pair : comparator.getModifiedFiles()) {
+        var files = comparator.getModifiedFiles();
+        files.sort(Comparator.comparing(pair -> pair.first.getName(), String.CASE_INSENSITIVE_ORDER));
+        for (Pair<File, File> pair : files) {
             var diff = getDiff(pair.first.getAbsolutePath(), pair.second.getAbsolutePath());
             var html = VanillaDiffView.build(pair.first, pair.second, diff, true);
 
@@ -78,6 +81,8 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
             FileWriter writer = new FileWriter(htmlOutput);
             writer.write(html.render());
             writer.close();
+
+            System.out.println(pair.first);
 
             i++;
         }
