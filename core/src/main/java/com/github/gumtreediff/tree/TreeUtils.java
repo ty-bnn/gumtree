@@ -247,4 +247,77 @@ public final class TreeUtils {
             }
         };
     }
+
+    public static Iterator<Tree> upDownIterator(Tree root) {
+        return new Iterator<Tree>() {
+            /**
+             * スタックに積むFrame。
+             *  (ノード, その子のイテレータ, down済みかどうか)
+             */
+            class Frame {
+                Tree node;
+                Iterator<Tree> children;
+                boolean downVisited; // 下り際の出力を済ませたか?
+
+                Frame(Tree node) {
+                    this.node = node;
+                    this.children = node.getChildren().iterator();
+                    this.downVisited = false;
+                }
+            }
+
+            private final Deque<Frame> stack = new ArrayDeque<>();
+            {
+                // 最初に root をスタックに積む
+                stack.push(new Frame(root));
+            }
+
+            @Override
+            public boolean hasNext() {
+                return !stack.isEmpty();
+            }
+
+            @Override
+            public Tree next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+
+                while (true) {
+                    Frame top = stack.peek();
+                    if (top == null) {
+                        throw new NoSuchElementException();
+                    }
+
+                    // 1) down フェーズ（まだ下り際の出力をしていない場合）
+                    if (!top.downVisited) {
+                        top.downVisited = true;
+                        // 最初の "down" 出力
+                        return top.node;
+                    }
+
+                    // 2) 子どもがまだ残っている場合は、その子をスタックに積んで次へ
+                    if (top.children.hasNext()) {
+                        Tree nextChild = top.children.next();
+                        stack.push(new Frame(nextChild));
+                        // ループ先頭に戻り、子ノードのdownを返す
+                        continue;
+                    }
+
+                    // 3) 子ノードをすべて走査し終わった場合
+                    stack.pop();  // スタックから降りる
+
+                    //   - 葉ノードなら down で1回返して終わりなので、
+                    //     up はスキップして即「親」に戻りたい
+                    if (top.node.isLeaf()) {
+                        // ループを続けて、次のスタックトップを処理する
+                        continue;
+                    } else {
+                        //   - 子があったノードなら up フェーズの出力
+                        return top.node;
+                    }
+                }
+            }
+        };
+    }
 }

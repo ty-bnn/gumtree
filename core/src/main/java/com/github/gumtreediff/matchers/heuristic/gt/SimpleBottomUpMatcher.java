@@ -20,12 +20,7 @@
 
 package com.github.gumtreediff.matchers.heuristic.gt;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.github.gumtreediff.matchers.*;
 import com.github.gumtreediff.tree.Tree;
@@ -80,7 +75,49 @@ public class SimpleBottomUpMatcher implements Matcher {
                        && mappings.hasUnmappedDstChildren(mappings.getDstForSrc(t)))
                 lastChanceMatch(mappings, t, mappings.getDstForSrc(t));
         }
+        matchSmallChunk(src, dst, mappings);
         return mappings;
+    }
+
+    private void matchSmallChunk(Tree src, Tree dst, MappingStore mappings) {
+        Stack<Tree> stack = new Stack<>();
+        stack.push(src);
+        while (!stack.isEmpty()) {
+            Tree t = stack.pop();
+
+            // 式同士マッチしていないという前提
+            // TODO: tが既にMappingされていたらどうするの？
+            if ((t.getType().toString().equals("SimpleName") || t.getType().toString().equals("MethodInvocation")) && !mappings.isSrcMapped(t)) {
+                // もしExpressionの親がMappingされている場合は対応するdstのノードを探す
+                // 親がMappingされていない場合はそもそも別のものとして考えて良い...
+                if (mappings.isSrcMapped(t.getParent())) {
+                    // Mappingされている親の同じ位置にあると仮定
+                    var parentInDst = mappings.getDstForSrc(t.getParent());
+                    var childIndex = t.getParent().getChildPosition(t);
+                    var candidate = parentInDst.getChild(childIndex);
+                    if (candidate.getType().toString().equals("ArrayAccess")) {
+                        subTreeMatch(t, candidate, mappings);
+                    }
+                }
+                continue; // これ以降の子孫の確認は飛ばす
+            }
+
+            for (int i = t.getChildren().size() - 1; i >= 0; i--) {
+                stack.push(t.getChild(i));
+            }
+        }
+    }
+
+    private void subTreeMatch(Tree src, Tree dst, MappingStore mappings) {
+        var srcLeaves = src.getUnMappedLeaves(mappings);
+        var dstLeaves = dst.getUnMappedLeaves(mappings);
+        for (Tree s : srcLeaves) {
+            for (Tree d : dstLeaves) {
+                if (s.getType().equals(d.getType()) && s.getLabel().equals(d.getLabel())) {
+                    mappings.addMapping(s, d);
+                }
+            }
+        }
     }
 
     protected List<Tree> getDstCandidates(MappingStore mappings, Tree src) {

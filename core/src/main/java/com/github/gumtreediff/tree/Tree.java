@@ -20,6 +20,8 @@
 
 package com.github.gumtreediff.tree;
 
+import com.github.gumtreediff.matchers.MappingStore;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -48,6 +50,10 @@ public interface Tree {
      */
     default Iterable<Tree> postOrder() {
         return () -> TreeUtils.postOrderIterator(Tree.this);
+    }
+
+    default Iterable<Tree> upDownOrder() {
+        return () -> TreeUtils.upDownIterator(Tree.this);
     }
 
     /**
@@ -322,6 +328,16 @@ public interface Tree {
         }
 
         return true;
+    }
+
+    default Set<Tree> getUnMappedLeaves(MappingStore mappings) {
+        Set<Tree> leaves = new HashSet<>();
+        for (Tree t : this.preOrder()) {
+            if (t.isLeaf() && !mappings.isSrcMapped(t)) {
+                leaves.add(t);
+            }
+        }
+        return leaves;
     }
 
     /**
