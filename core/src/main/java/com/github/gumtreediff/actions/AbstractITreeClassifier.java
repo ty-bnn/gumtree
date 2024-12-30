@@ -40,6 +40,10 @@ public abstract class AbstractITreeClassifier implements TreeClassifier {
 
     protected final Set<Tree> dstAddTrees = new HashSet<>();
 
+    protected final Set<Tree> srcRemTrees = new HashSet<>();
+
+    protected final Set<Tree> dstRemTrees = new HashSet<>();
+
     public AbstractITreeClassifier(Diff diff) {
         this.diff = diff;
         classify();
@@ -69,5 +73,14 @@ public abstract class AbstractITreeClassifier implements TreeClassifier {
 
     public Set<Tree> getInsertedDsts() {
         return dstAddTrees;
+    }
+
+
+    public Set<Tree> getRematchedSrcs() {
+        return srcRemTrees;
+    }
+
+    public Set<Tree> getRematchedDsts() {
+        return dstRemTrees;
     }
 }

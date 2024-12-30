@@ -44,6 +44,8 @@ public interface TreeClassifier {
      */
     Set<Tree> getMovedSrcs();
 
+    Set<Tree> getRematchedSrcs();
+
     /**
      * Return the set of updated nodes in the destination AST.
      */
@@ -58,4 +60,6 @@ public interface TreeClassifier {
      * Return the set of moved nodes in the destination AST.
      */
     Set<Tree> getMovedDsts();
+
+    Set<Tree> getRematchedDsts();
 }

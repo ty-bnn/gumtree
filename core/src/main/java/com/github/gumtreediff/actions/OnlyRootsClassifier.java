@@ -70,6 +70,10 @@ public class OnlyRootsClassifier extends AbstractITreeClassifier {
                 srcMvTrees.add(a.getNode());
                 dstMvTrees.add(diff.mappings.getDstForSrc(a.getNode()));
             }
+            else if (a instanceof Rematch) {
+                srcRemTrees.add(((Rematch) a).getLeft());
+                dstRemTrees.add(((Rematch) a).getRight());
+            }
         }
     }
 }

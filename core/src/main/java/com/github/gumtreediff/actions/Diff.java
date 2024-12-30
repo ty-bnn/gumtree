@@ -20,12 +20,11 @@
 
 package com.github.gumtreediff.actions;
 
+import com.github.gumtreediff.actions.model.Rematch;
 import com.github.gumtreediff.gen.TreeGenerators;
-import com.github.gumtreediff.matchers.GumtreeProperties;
-import com.github.gumtreediff.matchers.MappingStore;
-import com.github.gumtreediff.matchers.Matcher;
-import com.github.gumtreediff.matchers.Matchers;
+import com.github.gumtreediff.matchers.*;
 import com.github.gumtreediff.matchers.heuristic.gt.TokenMatcher;
+import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeContext;
 
 import java.io.IOException;
@@ -93,6 +92,9 @@ public class Diff {
         Matcher rm = new TokenMatcher();
         MappingStore remappings = rm.match(src.getRoot(), dst.getRoot(), mappings);
         EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(mappings);
+        for (Mapping map : remappings) {
+            editScript.add(new Rematch(map.first, map.second));
+        }
         return new Diff(src, dst, mappings, editScript);
     }
 
