@@ -71,8 +71,6 @@ public class MonacoDiffView {
                 appendRange(b, t, "updated");
             if (c.getDeletedSrcs().contains(t))
                 appendRange(b, t, "deleted");
-        }
-        for (Tree t: diff.src.getRoot().postOrder()) {
             if (c.getRematchedSrcs().contains(t))
                 appendRange(b, t, "rematched");
         }
@@ -94,8 +92,6 @@ public class MonacoDiffView {
                 appendRange(b, t, "updated");
             if (c.getInsertedDsts().contains(t))
                 appendRange(b, t, "inserted");
-        }
-        for (Tree t: diff.dst.getRoot().postOrder()) {
             if (c.getRematchedDsts().contains(t))
                 appendRange(b, t, "rematched");
         }

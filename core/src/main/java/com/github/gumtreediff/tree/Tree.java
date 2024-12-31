@@ -330,16 +330,6 @@ public interface Tree {
         return true;
     }
 
-    default Set<Tree> getUnMappedLeaves(MappingStore mappings) {
-        Set<Tree> leaves = new HashSet<>();
-        for (Tree t : this.preOrder()) {
-            if (t.isLeaf() && !mappings.isSrcMapped(t)) {
-                leaves.add(t);
-            }
-        }
-        return leaves;
-    }
-
     /**
      * Returns a string description of the node as well as its descendants.
      */
