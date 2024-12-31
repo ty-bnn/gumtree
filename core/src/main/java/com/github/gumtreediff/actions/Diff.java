@@ -20,6 +20,8 @@
 
 package com.github.gumtreediff.actions;
 
+import com.github.gumtreediff.actions.model.Action;
+import com.github.gumtreediff.actions.model.Move;
 import com.github.gumtreediff.actions.model.Rematch;
 import com.github.gumtreediff.gen.TreeGenerators;
 import com.github.gumtreediff.matchers.*;
@@ -29,6 +31,7 @@ import com.github.gumtreediff.tree.TreeContext;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.*;
 
 /**
  * Class to facilitate the computation of diffs between ASTs.
@@ -90,12 +93,39 @@ public class Diff {
         m.configure(properties);
         MappingStore mappings = m.match(src.getRoot(), dst.getRoot());
         Matcher rm = new TokenMatcher();
-        MappingStore remappings = rm.match(src.getRoot(), dst.getRoot(), mappings);
+        var remappings = rm.match(src.getRoot(), dst.getRoot(), mappings);
         EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(mappings);
-        for (Mapping map : remappings) {
-            editScript.add(new Rematch(map.first, map.second));
-        }
+        removeUnnecessaryMove(editScript, remappings);
         return new Diff(src, dst, mappings, editScript);
+    }
+
+    private static void removeUnnecessaryMove(EditScript editScript, MappingStore remappings) throws IOException {
+        List<Tree> moveTrees = new ArrayList<>();
+        List<Move> removes = new ArrayList<>();
+        for (Action a : editScript) {
+            if (a instanceof Move) {
+                if (remappings.isSrcMapped(a.getNode())) {
+                    removes.add((Move) a);
+                } else {
+                    moveTrees.add(a.getNode());
+                }
+            }
+        }
+        for (Move m : removes) {
+            editScript.remove(m);
+            if (!treeIncludedOtherMove(moveTrees, m.getNode())) {
+                editScript.add(new Rematch(m.getNode(), remappings.getDstForSrc(m.getNode())));
+            }
+        }
+    }
+
+    private static boolean treeIncludedOtherMove(List<Tree> moveTrees, Tree target) {
+        for (Tree t : moveTrees) {
+            if (t.getDescendants().contains(target)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
