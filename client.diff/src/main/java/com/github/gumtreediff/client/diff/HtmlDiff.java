@@ -29,6 +29,9 @@ import com.github.gumtreediff.client.diff.webdiff.VanillaDiffView;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 
 @Register(name = "htmldiff", description = "Dump diff as HTML in stdout",
         options = HtmlDiff.HtmlDiffOptions.class)
@@ -61,18 +64,27 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
 
     @Override
     public void run() throws IOException {
-        DirectoryComparator comparator = new DirectoryComparator(opts.srcPath, opts.dstPath);
-        Pair<File, File> pair = comparator.getModifiedFiles().get(0);
-        Diff diff = getDiff(pair.first.getAbsolutePath(), pair.second.getAbsolutePath());
-        var html = VanillaDiffView.build(pair.first, pair.second, diff, true);
-        if (opts.output == null) {
-            System.out.println(html.render());
-        }
-        else {
-            File htmlOutput = new File(opts.output);
+        String version = "/new-gumtree/";
+        DirectoryComparator comparator = new DirectoryComparator(opts.srcPath + "/before", opts.srcPath + "/after");
+        comparator.compare();
+
+        int i = 0;
+        var files = comparator.getModifiedFiles();
+        files.sort(Comparator.comparing(pair -> pair.first.getName(), String.CASE_INSENSITIVE_ORDER));
+        for (Pair<File, File> pair : files) {
+            var diff = getDiff(pair.first.getAbsolutePath(), pair.second.getAbsolutePath());
+            var html = VanillaDiffView.build(pair.first, pair.second, diff, true);
+
+            Path filePath = Paths.get(opts.dstPath + version + i + ".html");
+
+            File htmlOutput = new File(filePath.toString());
             FileWriter writer = new FileWriter(htmlOutput);
             writer.write(html.render());
             writer.close();
+
+            System.out.println(pair.first);
+
+            i++;
         }
     }
 }
