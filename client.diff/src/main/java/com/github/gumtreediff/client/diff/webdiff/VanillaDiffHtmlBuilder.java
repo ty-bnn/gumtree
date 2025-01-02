@@ -40,6 +40,8 @@ public final class VanillaDiffHtmlBuilder {
 
     private static final String SRC_MV_SPAN = "<span class=\"%s\" id=\"move-src-%d\" data-title=\"%s\">";
     private static final String DST_MV_SPAN = "<span class=\"%s\" id=\"move-dst-%d\" data-title=\"%s\">";
+    private static final String SRC_REMATCH_SPAN = "<span class=\"%s\" id=\"rematch-src-%d\" data-title=\"%s\">";
+    private static final String DST_REMATCH_SPAN = "<span class=\"%s\" id=\"rematch-dst-%d\" data-title=\"%s\">";
     private static final String ADD_DEL_SPAN = "<span class=\"%s\" data-title=\"%s\">";
     private static final String UPD_SPAN = "<span class=\"cupd\">";
     private static final String ID_SPAN = "<span class=\"marker\" id=\"mapping-%d\"></span>";
@@ -91,6 +93,12 @@ public final class VanillaDiffHtmlBuilder {
                 ltags.addTags(t.getPos(), String.format(
                                 ADD_DEL_SPAN, "token del", tooltip(diff.src, t)), t.getEndPos(), END_SPAN);
             }
+            if (c.getRematchedSrcs().contains(t)) {
+                mappingIds.put(diff.mappings.getDstForSrc(t), mId);
+                ltags.addStartTag(t.getPos(), String.format(ID_SPAN, uId++));
+                ltags.addTags(t.getPos(), String.format(
+                                SRC_REMATCH_SPAN, "rematch", mId++, tooltip(diff.src, t)), t.getEndPos(), END_SPAN);
+            }
         }
 
         TagIndex rtags = new TagIndex();
@@ -114,6 +122,12 @@ public final class VanillaDiffHtmlBuilder {
                 rtags.addStartTag(t.getPos(), String.format(ID_SPAN, uId++));
                 rtags.addTags(t.getPos(), String.format(
                                 ADD_DEL_SPAN, "token add", tooltip(diff.dst, t)), t.getEndPos(), END_SPAN);
+            }
+            if (c.getRematchedDsts().contains(t)) {
+                int dId = mappingIds.getInt(t);
+                rtags.addStartTag(t.getPos(), String.format(ID_SPAN, uId++));
+                rtags.addTags(t.getPos(), String.format(
+                                DST_REMATCH_SPAN, "rematch", dId, tooltip(diff.dst, t)), t.getEndPos(), END_SPAN);
             }
         }
 

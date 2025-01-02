@@ -33,6 +33,11 @@
 	background-color: Plum;
 }
 
+.rematch {
+	border: 1px solid black;
+	background-color: White;
+}
+
 .upd {
 	border: 1px solid black;
 	background-color: DarkOrange;
