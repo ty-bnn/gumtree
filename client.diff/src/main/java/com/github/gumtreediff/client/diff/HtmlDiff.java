@@ -75,7 +75,7 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
         for (Pair<File, File> pair : files) {
             var diff = getDiff(pair.first.getAbsolutePath(), pair.second.getAbsolutePath());
             var html = VanillaDiffView.build(pair.first, pair.second, diff, true);
-            Path htmlFilePath = Paths.get(opts.dstPath + "/web-diff" + version + i + ".html");
+            Path htmlFilePath = Paths.get(opts.dstPath + "/web-diff" + version + String.format("%04d", i) + ".html");
             File htmlOutput = new File(htmlFilePath.toString());
             FileWriter writer = new FileWriter(htmlOutput);
             writer.write(html.render());
@@ -83,7 +83,7 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
 
             var format = TextDiff.OutputFormat.JSON;
             ActionsIoUtils.ActionSerializer serializer = format.getSerializer(diff.src, diff.editScript, diff.mappings);
-            Path actionFilePath = Paths.get(opts.dstPath + "/action-diff" + version + i + ".json");
+            Path actionFilePath = Paths.get(opts.dstPath + "/action-diff" + version + String.format("%04d", i) + ".json");
             File actionOutput = new File(actionFilePath.toString());
             serializer.writeTo(actionOutput);
 
