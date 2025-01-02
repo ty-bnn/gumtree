@@ -70,6 +70,10 @@ public class TokenMatcher implements Matcher {
             if (mappings.isSrcMapped(t)) {
                 var treeInDst = mappings.getDstForSrc(t);
                 if (dst.getParent().getDescendants().contains(treeInDst)) {
+                    if (t.isLeaf() && !t.getLabel().equals(treeInDst.getLabel())) {
+                        leaves.add(t);
+                        mappings.removeMapping(t, treeInDst);
+                    }
                     remappings.addMapping(t, treeInDst);
                 }
             } else if (t.isLeaf()) {
