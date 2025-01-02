@@ -19,6 +19,7 @@
 
 package com.github.gumtreediff.client.diff;
 
+import com.github.gumtreediff.io.ActionsIoUtils;
 import com.github.gumtreediff.io.DirectoryComparator;
 import com.github.gumtreediff.client.Register;
 import com.github.gumtreediff.actions.Diff;
@@ -63,7 +64,7 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
     }
 
     @Override
-    public void run() throws IOException {
+    public void run() throws Exception {
         String version = "/new-gumtree/";
         DirectoryComparator comparator = new DirectoryComparator(opts.srcPath + "/before", opts.srcPath + "/after");
         comparator.compare();
@@ -74,13 +75,17 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
         for (Pair<File, File> pair : files) {
             var diff = getDiff(pair.first.getAbsolutePath(), pair.second.getAbsolutePath());
             var html = VanillaDiffView.build(pair.first, pair.second, diff, true);
-
-            Path filePath = Paths.get(opts.dstPath + version + i + ".html");
-
-            File htmlOutput = new File(filePath.toString());
+            Path htmlFilePath = Paths.get(opts.dstPath + "/web-diff" + version + i + ".html");
+            File htmlOutput = new File(htmlFilePath.toString());
             FileWriter writer = new FileWriter(htmlOutput);
             writer.write(html.render());
             writer.close();
+
+            var format = TextDiff.OutputFormat.JSON;
+            ActionsIoUtils.ActionSerializer serializer = format.getSerializer(diff.src, diff.editScript, diff.mappings);
+            Path actionFilePath = Paths.get(opts.dstPath + "/action-diff" + version + i + ".json");
+            File actionOutput = new File(actionFilePath.toString());
+            serializer.writeTo(actionOutput);
 
             System.out.println(pair.first);
 
