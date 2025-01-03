@@ -112,8 +112,9 @@ public class Diff {
             }
         }
         for (Move m : removes) {
-            editScript.remove(m);
+            // 削除対象のMoveが他のMoveに含まれている場合、見た目に変化がないので何もしない
             if (!treeIncludedOtherMove(moveTrees, m.getNode())) {
+                editScript.remove(m);
                 editScript.add(new Rematch(m.getNode(), remappings.getDstForSrc(m.getNode())));
             }
         }
