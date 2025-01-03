@@ -17,7 +17,7 @@ public class TokenMatcher implements Matcher {
             Tree t = stack.pop();
 
             // 一番最初に出てきたExpressionを発見
-            if (JdtNodes.expressions.contains(t.getType().toString())) {
+            if (JdtNodes.smallNodes.contains(t.getType().toString())) {
                 Tree candidate = null;
                 if (mappings.isSrcMapped(t.getParent())) {
                     var parentInDst = mappings.getDstForSrc(t.getParent());
@@ -25,14 +25,15 @@ public class TokenMatcher implements Matcher {
                     var max = -1D;
                     for (Tree c : childrenInDst) {
                         var sim = SimilarityMetrics.chawatheSimilarity(t, c, mappings);
-                        if (sim > max && JdtNodes.expressions.contains(c.getType().toString())) {
+                        if (sim > max && JdtNodes.smallNodes.contains(c.getType().toString())) {
                             max = sim;
                             candidate = c;
                         }
                     }
                 }
-                if (candidate != null && JdtNodes.expressions.contains(t.getType().toString())) {
-                    subTreeMatch(t, candidate, mappings, remappings);
+                if (candidate != null && JdtNodes.smallNodes.contains(t.getType().toString())) {
+//                    subTreeMatch(t, candidate, mappings, remappings);
+                    doNotMove(t, candidate, mappings, remappings);
                 }
                 continue; // これ以降の子孫の確認はとばす
             }
@@ -45,14 +46,34 @@ public class TokenMatcher implements Matcher {
         return remappings;
     }
 
+    private void doNotMove(Tree src, Tree dst, MappingStore mappings, MappingStore remappings) {
+        Stack<Tree> stack = new Stack<>();
+        for (int i = 0; i < src.getChildren().size(); i++) {
+            stack.push(src.getChildren().get(i));
+        }
+        while (!stack.isEmpty()) {
+            Tree t = stack.pop();
+            if (mappings.isSrcMapped(t)) {
+                var treeInDst = mappings.getDstForSrc(t);
+                if (dst.getParent().getDescendants().contains(treeInDst)) {
+                    remappings.addMapping(t, treeInDst);
+                }
+            }
+            for (int i = t.getChildren().size() - 1; i >= 0; i--) {
+                stack.push(t.getChild(i));
+            }
+        }
+    }
+
     private void subTreeMatch(Tree src, Tree dst, MappingStore mappings, MappingStore remappings) {
         var srcLeaves = getUnMappedLeavesFromSrc(src, dst, mappings, remappings);
         var dstLeaves = getUnMappedLeavesFromDst(dst, mappings);
         for (Tree s : srcLeaves) {
             for (Tree d : dstLeaves) {
-                if (s.getType().equals(d.getType()) && s.getLabel().equals(d.getLabel())) {
+                if (s.getType().equals(d.getType()) && s.getLabel().equals(d.getLabel()) && !mappings.isDstMapped(d)) {
                     mappings.addMapping(s, d);
                     remappings.addMapping(s, d);
+                    break;
                 }
             }
         }
@@ -70,10 +91,6 @@ public class TokenMatcher implements Matcher {
             if (mappings.isSrcMapped(t)) {
                 var treeInDst = mappings.getDstForSrc(t);
                 if (dst.getParent().getDescendants().contains(treeInDst)) {
-                    if (t.isLeaf() && !t.getLabel().equals(treeInDst.getLabel())) {
-                        leaves.add(t);
-                        mappings.removeMapping(t, treeInDst);
-                    }
                     remappings.addMapping(t, treeInDst);
                 }
             } else if (t.isLeaf()) {
