@@ -122,6 +122,8 @@ public final class ActionsIoUtils {
                     fmt.insertTreeAction((TreeInsert) a, src, dst.getParent(), dst.getParent().getChildPosition(dst));
                 } else if (a instanceof  TreeDelete) {
                     fmt.deleteTreeAction((TreeDelete) a, src);
+                } else if (a instanceof Rematch) {
+                    fmt.rematchTree((Rematch) a, ((Rematch) a).getRight(), ((Rematch) a).getLeft());
                 }
 
             }
@@ -158,6 +160,8 @@ public final class ActionsIoUtils {
         void deleteAction(Delete action, Tree node) throws Exception;
 
         void deleteTreeAction(TreeDelete action, Tree node) throws Exception;
+
+        void rematchTree(Rematch action, Tree src, Tree dst) throws Exception;
 
         void endActions() throws Exception;
     }
@@ -254,6 +258,12 @@ public final class ActionsIoUtils {
         }
 
         @Override
+        public void rematchTree(Rematch action, Tree src, Tree dst) throws Exception {
+            start(action, src);
+            end(src);
+        }
+
+        @Override
         public void endActions() throws XMLStreamException {
             writer.writeEndElement();
         }
@@ -334,6 +344,11 @@ public final class ActionsIoUtils {
 
         @Override
         public void deleteTreeAction(TreeDelete action, Tree node) throws Exception {
+            write(action.toString());
+        }
+
+        @Override
+        public void rematchTree(Rematch action, Tree src, Tree dst) throws Exception {
             write(action.toString());
         }
 
@@ -440,6 +455,12 @@ public final class ActionsIoUtils {
         public void deleteTreeAction(TreeDelete action, Tree node) throws IOException {
             start(action, node);
             end(node);
+        }
+
+        @Override
+        public void rematchTree(Rematch action, Tree src, Tree dst) throws Exception {
+            start(action, src);
+            end(src);
         }
 
         private void start(Action action, Tree src) throws IOException {
