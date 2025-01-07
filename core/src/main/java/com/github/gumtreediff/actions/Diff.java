@@ -25,9 +25,9 @@ import com.github.gumtreediff.actions.model.Move;
 import com.github.gumtreediff.actions.model.Rematch;
 import com.github.gumtreediff.gen.TreeGenerators;
 import com.github.gumtreediff.matchers.*;
-import com.github.gumtreediff.matchers.heuristic.gt.TokenMatcher;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeContext;
+import org.eclipse.jdt.core.dom.*;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -92,11 +92,125 @@ public class Diff {
         Matcher m = Matchers.getInstance().getMatcherWithFallback(matcher);
         m.configure(properties);
         MappingStore mappings = m.match(src.getRoot(), dst.getRoot());
-        Matcher rm = new TokenMatcher();
-        var remappings = rm.match(src.getRoot(), dst.getRoot(), mappings);
+//        Matcher rm = new TokenMatcher();
+//        var remappings = rm.match(src.getRoot(), dst.getRoot(), mappings);
         EditScript editScript = new SimplifiedChawatheScriptGenerator().computeActions(mappings);
-        removeUnnecessaryMove(editScript, remappings);
+//        removeUnnecessaryMove(editScript, remappings);
+        removeMove(editScript, mappings);
         return new Diff(src, dst, mappings, editScript);
+    }
+
+    private static void removeMove(EditScript editScript, MappingStore mappings) {
+        Set<Class> typesForRemove = Set.of(
+                Expression.class,
+                Type.class,
+                Pattern.class,
+                Name.class
+        );
+        List<Move> removeMoves = new ArrayList<>();
+        for (var action : editScript) {
+            if (action instanceof Move) {
+                var srcTree = action.getNode();
+                var dstTree = mappings.getDstForSrc(srcTree);
+                var nodeType = getNodeTypeAsChild(srcTree);
+                if (nodeType != Expression.class && nodeType != Type.class && nodeType != Pattern.class && nodeType != Name.class) {
+                    continue;
+                }
+                // Expressionを上に辿っていった経路を取得
+                var srcPath = getPathsToMoveNode(srcTree);
+                var dstPath = getPathsToMoveNode(dstTree);
+                // 親が一致している場合は経路の比較を行う
+                if (mappings.isSrcMapped(srcPath.peek()) &&
+                        mappings.getDstForSrc(srcPath.peek()).equals(dstPath.peek())) {
+                    if (comparePaths(srcPath, dstPath, mappings)) {
+                        removeMoves.add((Move) action);
+                    }
+                }
+            }
+        }
+        for (var move : removeMoves) {
+            editScript.remove(move);
+        }
+        // 削除対象の移動のノードが他の移動に含まれている場合は無視する
+        List<Move> moveActions = new ArrayList<>();
+        for (var action : editScript) {
+            if (action instanceof Move) {
+                moveActions.add((Move) action);
+            }
+        }
+        for (var rm : removeMoves) {
+            if (isInOtherMove(rm, moveActions)) {
+                continue;
+            }
+            editScript.add(new Rematch(rm.getNode(), mappings.getDstForSrc(rm.getNode())));
+        }
+    }
+
+    private static boolean isInOtherMove(Move rm, List<Move> moveActions) {
+        for (var ma : moveActions) {
+            if (ma.getNode().getDescendants().contains(rm.getNode())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static java.lang.Class getNodeTypeAsChild(Tree t) {
+        var prop = t.getNodeProperty();
+        if (prop instanceof ChildPropertyDescriptor cpd) {
+            return cpd.getChildType();
+        } else if (prop instanceof ChildListPropertyDescriptor clpd) {
+            return clpd.getElementType();
+        } else if (prop instanceof SimplePropertyDescriptor spd) {
+            return spd.getValueType();
+        }
+        return null;
+    }
+
+    private static Stack<Tree> getPathsToIfNode(Tree t) {
+        Stack<Tree> path = new Stack<>();
+        path.push(t);
+        t = t.getParent();
+        while (t != null && t.getType().toString().equals("IfStatement")) {
+            path.push(t);
+            t = t.getParent();
+        }
+        return path;
+    }
+
+    private static Stack<Tree> getPathsToMoveNode(Tree t) {
+        Stack<Tree> path = new Stack<>();
+        path.push(t);
+        var nodeType = getNodeTypeAsChild(t);
+        while (t != null && getNodeTypeAsChild(t) == nodeType) {
+            t = t.getParent();
+            path.push(t);
+        }
+        return path;
+    }
+
+    private static boolean comparePaths(Stack<Tree> srcPath, Stack<Tree> dstPath, MappingStore mappings) {
+        while(1 < srcPath.size()) {
+            Tree srcTree = srcPath.pop();
+            // マッピングがない場合は削除されるためため気にしない
+            if (!mappings.isSrcMapped(srcTree)) {
+                continue;
+            }
+            // マッピング対象が相手の経路に存在しない場合は上と同じく削除予定
+            var dstTree = mappings.getDstForSrc(srcTree);
+            if (!dstPath.contains(dstTree)) {
+                continue;
+            }
+            // マッピングしている場合は次のノードが同一子ノードへの道を辿っているかを判定する
+            var nextTreeInSrc = srcPath.peek();
+            var nextTreeInDst = dstPath.get(dstPath.indexOf(dstTree) - 1);
+            // InfixExpressionの場合はOperandの位置を気にしない
+            if (!srcTree.getType().toString().equals("InfixExpression") &&
+                    !nextTreeInSrc.getNodeProperty().getId().equals(nextTreeInDst.getNodeProperty().getId())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void removeUnnecessaryMove(EditScript editScript, MappingStore remappings) throws IOException {

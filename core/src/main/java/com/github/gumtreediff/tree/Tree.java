@@ -25,6 +25,8 @@ import com.github.gumtreediff.matchers.MappingStore;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 
 /**
  * Interface to represent abstract syntax trees.
@@ -361,4 +363,16 @@ public interface Tree {
      * Returns an iterator for all metadata of this node.
      */
     Iterator<Entry<String, Object>> getMetadata();
+
+    default void setASTNode(ASTNode node) {}
+
+    default ASTNode getASTNode() {
+        return null;
+    }
+
+    default void setNodeProperty(StructuralPropertyDescriptor property) {}
+
+    default StructuralPropertyDescriptor getNodeProperty() {
+        return null;
+    }
 }

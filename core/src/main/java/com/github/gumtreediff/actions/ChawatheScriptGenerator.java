@@ -116,6 +116,7 @@ public class ChawatheScriptGenerator implements EditScriptGenerator {
                         actions.add(new Update(copyToOrig.get(w), x.getLabel()));
                         w.setLabel(x.getLabel());
                     }
+                    // 親が一緒なら子供でlcs、異なるなら移動
                     if (!z.equals(v)) {
                         int k = findPos(x);
                         Action mv = new Move(copyToOrig.get(w), copyToOrig.get(z), k);

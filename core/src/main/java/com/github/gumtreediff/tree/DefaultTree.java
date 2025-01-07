@@ -20,6 +20,9 @@
 
 package com.github.gumtreediff.tree;
 
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -33,6 +36,10 @@ public class DefaultTree extends AbstractTree implements Tree {
     private int length;
 
     private AssociationMap metadata;
+
+    private ASTNode astNode;
+
+    private StructuralPropertyDescriptor nodeProperty;
 
     /**
      * Constructs a new node with an empty label.
@@ -143,5 +150,25 @@ public class DefaultTree extends AbstractTree implements Tree {
         if (metadata == null)
             return new EmptyEntryIterator();
         return metadata.iterator();
+    }
+
+    @Override
+    public void setASTNode(ASTNode astNode) {
+        this.astNode = astNode;
+    }
+
+    @Override
+    public ASTNode getASTNode() {
+        return astNode;
+    }
+
+    @Override
+    public void setNodeProperty(StructuralPropertyDescriptor property) {
+        this.nodeProperty = property;
+    }
+
+    @Override
+    public StructuralPropertyDescriptor getNodeProperty() {
+        return this.nodeProperty;
     }
 }

@@ -81,7 +81,47 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
         else if (n instanceof EnumDeclaration)
             t.setMetadata("id", getId((EnumDeclaration) n));
 
+        var nodeProperty = getProperty(n);
+        t.setNodeProperty(nodeProperty);
+
         trees.push(t);
+    }
+
+    private StructuralPropertyDescriptor getProperty(ASTNode n) {
+        if (n.getNodeType() == ASTNode.COMPILATION_UNIT) {
+            return null;
+        }
+        var properties = n.getParent().structuralPropertiesForType();
+        for (var prop : properties) {
+            if (prop instanceof ChildPropertyDescriptor clpd) {
+                ASTNode child = (ASTNode) n.getParent().getStructuralProperty(clpd);
+                if (child == null) {
+                    continue;
+                }
+                if (child.equals(n)) {
+                    return clpd;
+                }
+            } else if (prop instanceof ChildListPropertyDescriptor clpd) {
+                List<ASTNode> children = (List<ASTNode>) n.getParent().getStructuralProperty(clpd);
+                if (children == null) {
+                    continue;
+                }
+                for (ASTNode child : children) {
+                    if (child.equals(n)) {
+                        return clpd;
+                    }
+                }
+            } else if (prop instanceof SimplePropertyDescriptor clpd) {
+                Object child = n.getParent().getStructuralProperty(clpd);
+                if (!(child instanceof ASTNode)) {
+                    continue;
+                }
+                if (child.equals(n)) {
+                    return clpd;
+                }
+            }
+        }
+        return null;
     }
 
     private String getId(TypeDeclaration d) {
