@@ -220,8 +220,93 @@ public class Diff {
                     !nextTreeInSrc.getNodeProperty().getId().equals(nextTreeInDst.getNodeProperty().getId())) {
                 return false;
             }
+            // 横の移動を検出する
+            List<Tree> childrenInSrc = new ArrayList<>();
+            List<Tree> childrenInDst = new ArrayList<>();
+            if (srcTree.getType().toString().equals("InfixExpression")) {
+                for (var t : srcTree.getChildren()) {
+                    if (t.getType().toString().equals("INFIX_EXPRESSION_OPERATOR")) {
+                        continue;
+                    }
+                    childrenInSrc.add(t);
+                }
+                for (var t : dstTree.getChildren()) {
+                    if (t.getType().toString().equals("INFIX_EXPRESSION_OPERATOR")) {
+                        continue;
+                    }
+                    childrenInDst.add(t);
+                }
+                childrenInDst = dstTree.getChildren();
+            } else if (nextTreeInSrc.getNodeProperty() instanceof ChildListPropertyDescriptor) {
+                var nodeId = nextTreeInSrc.getNodeProperty().getId();
+                for (var t : srcTree.getChildren()) {
+                    if (t.getNodeProperty().getId().equals(nodeId)) {
+                        childrenInSrc.add(t);
+                    }
+                }
+                for (var t : dstTree.getChildren()) {
+                    if (t.getNodeProperty().getId().equals(nodeId)) {
+                        childrenInDst.add(t);
+                    }
+                }
+            } else {
+                continue;
+            }
+
+            List<Tree> s1 = new ArrayList<>();
+            for (Tree c: childrenInSrc)
+                if (mappings.isSrcMapped(c))
+                    if (childrenInDst.contains(mappings.getDstForSrc(c)))
+                        s1.add(c);
+
+            List<Tree> s2 = new ArrayList<>();
+            for (Tree c: childrenInDst)
+                if (mappings.isDstMapped(c))
+                    if (childrenInSrc.contains(mappings.getSrcForDst(c)))
+                        s2.add(c);
+
+            List<Mapping> lcs = lcs(s1, s2, mappings);
+            var childInSrcIndex = childrenInSrc.indexOf(nextTreeInSrc);
+            var childInDstIndex = childrenInDst.indexOf(nextTreeInDst);
+            for (var m : lcs) {
+                var indexInSrc = childrenInSrc.indexOf(m.first);
+                var indexInDst = childrenInDst.indexOf(m.second);
+                if (childInSrcIndex <= indexInSrc && childInDstIndex <= indexInDst
+                        || indexInSrc <= childInSrcIndex && indexInDst <= childInDstIndex) {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+
         }
         return true;
+    }
+
+    private static List<Mapping> lcs(List<Tree> x, List<Tree> y, MappingStore mappings) {
+        int m = x.size();
+        int n = y.size();
+        List<Mapping> lcs = new ArrayList<>();
+
+        int[][] opt = new int[m + 1][n + 1];
+        for (int i = m - 1; i >= 0; i--) {
+            for (int j = n - 1; j >= 0; j--) {
+                if (mappings.getSrcForDst(y.get(j)).equals(x.get(i))) opt[i][j] = opt[i + 1][j + 1] + 1;
+                else  opt[i][j] = Math.max(opt[i + 1][j], opt[i][j + 1]);
+            }
+        }
+
+        int i = 0, j = 0;
+        while (i < m && j < n) {
+            if (mappings.getSrcForDst(y.get(j)).equals(x.get(i))) {
+                lcs.add(new Mapping(x.get(i), y.get(j)));
+                i++;
+                j++;
+            } else if (opt[i + 1][j] >= opt[i][j + 1]) i++;
+            else j++;
+        }
+
+        return lcs;
     }
 
     private static void removeUnnecessaryMove(EditScript editScript, MappingStore remappings) throws IOException {
