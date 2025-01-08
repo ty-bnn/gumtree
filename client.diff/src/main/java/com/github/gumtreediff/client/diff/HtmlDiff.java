@@ -65,7 +65,7 @@ public class HtmlDiff extends AbstractDiffClient<HtmlDiff.HtmlDiffOptions> {
 
     @Override
     public void run() throws Exception {
-        String version = "/new-gumtree/";
+        String version = "/if-node-ver/";
         DirectoryComparator comparator = new DirectoryComparator(opts.srcPath + "/before", opts.srcPath + "/after");
         comparator.compare();
 
